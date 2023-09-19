@@ -1,5 +1,8 @@
+import { ProductItem } from '../components/Product/index.js';
+
 class ProductPage {
   constructor() {
+    this.mainElement = document.createElement('main');
     this.product = {};
   }
 
@@ -15,35 +18,27 @@ class ProductPage {
     await this.getProductData();
 
     console.log(this.product);
+
+    this.mainElement.classList.add('product');
+    this.mainElement.innerHTML = `
+      <h1 class="ir">상품 목록 페이지</h1>
+      <ul class="product-list"></ul>
+    `;
+
+    const productList = this.mainElement.querySelector('.product-list');
+
+    this.product.forEach(item => {
+      const productItem = new ProductItem(item);
+      productList.append(productItem.render());
+    });
+    console.log(
+      '🚀 ~ file: productPage.js:21 ~ ProductPage ~ setProductList ~ this.mainElement:',
+      this.mainElement
+    );
   }
   render() {
-    const container = document.createElement('div');
-    const element = document.createElement('h1');
-
-    element.innerText = '상품목록 페이지입니다.';
-
-    const anchor1 = document.createElement('a');
-    anchor1.href = '/detail/1';
-    anchor1.innerText = '1 상세페이지 이동';
-
-    container.appendChild(anchor1);
-
-    const anchor2 = document.createElement('a');
-    anchor2.href = '/detail/2';
-    anchor2.innerText = '2 상세페이지 이동';
-
-    container.appendChild(anchor2);
-
-    const anchor3 = document.createElement('a');
-    anchor3.href = '/detail/3';
-    anchor3.innerText = '3 상세페이지 이동';
-
-    container.appendChild(anchor3);
-
-    container.appendChild(element);
-
     this.setProductList();
-    return container;
+    return this.mainElement;
   }
 }
 
