@@ -26,17 +26,6 @@ class ProductLikeButton extends Component {
     this.setState({ liked: this.checkLikeList() });
   }
 
-  setState(newState) {
-    this.state = newState;
-    this.updater();
-  }
-
-  updater() {
-    const rendered = this.render();
-    this.lastRendered?.replaceWith(rendered);
-    this.lastRendered = rendered;
-  }
-
   render() {
     const likeButton = document.createElement('button');
     likeButton.setAttribute('class', 'like-btn');
@@ -55,13 +44,6 @@ class ProductLikeButton extends Component {
     });
 
     return likeButton;
-  }
-
-  init() {
-    const rendered = this.render();
-    this.lastRendered = rendered;
-
-    return rendered;
   }
 }
 

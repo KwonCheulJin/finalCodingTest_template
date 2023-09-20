@@ -1,9 +1,13 @@
 import { ProductCard } from '../components/ProductCard/index.js';
+import { Component } from '../core/index.js';
 
-class ProductPage {
+class ProductPage extends Component {
   constructor() {
-    this.mainElement = document.createElement('main');
-    this.product = {};
+    super();
+    this.state = {
+      products: [],
+    };
+    this.getProductData();
   }
 
   // 전체 상품 정보 가져오기
@@ -11,14 +15,11 @@ class ProductPage {
     const response = await fetch('https://test.api.weniv.co.kr/mall');
     const data = await response.json();
 
-    this.product = await data;
+    this.setState({ products: data });
   }
-  // 상품 리스트 세팅하기
-  async setProductList() {
-    await this.getProductData();
 
-    console.log(this.product);
-
+  render() {
+    this.mainElement = document.createElement('main');
     this.mainElement.classList.add('product');
     const productPageHeader = document.createElement('h1');
     productPageHeader.setAttribute('class', 'ir');
@@ -29,18 +30,18 @@ class ProductPage {
     const productList = document.createElement('ul');
     productList.setAttribute('class', 'product-list');
 
-    this.product.forEach(item => {
+    this.state.products.forEach(item => {
       const productItem = document.createElement('li');
-      productItem.setAttribute('class', 'product-item');
+      productItem.setAttribute(
+        'class',
+        `product-item ${item.stockCount < 1 ? 'sold-out' : ''}`
+      );
       const productCard = new ProductCard({ item });
       productItem.append(productCard.render());
       productList.append(productItem);
     });
 
     this.mainElement.appendChild(productList);
-  }
-  render() {
-    this.setProductList();
     return this.mainElement;
   }
 }

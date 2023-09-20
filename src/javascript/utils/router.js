@@ -4,11 +4,12 @@ class Router {
       console.error('Can not initialize routes, need routes!');
     }
     this.routes = routes;
-
+    this.routeParam = {};
     for (const key in routes) {
       const route = routes[key];
       if (key.indexOf(':') > -1) {
         const [_, routeName, param] = key.split('/');
+        this.routeParam[routeName] = param.replace(':', '');
         this.routes[`/${routeName}`] = route;
         delete this.routes[key];
       }
@@ -50,10 +51,12 @@ class Router {
     let page = '';
     if (this.routes[pathname]) {
       const component = new this.routes[pathname]();
-      page = component.render();
+      page = component.init();
     } else if (param) {
-      const component = new this.routes[`/${routeName}`](param);
-      page = component.render();
+      const routeParam = {};
+      routeParam[this.routeParam[routeName]] = param;
+      const component = new this.routes[`/${routeName}`](routeParam);
+      page = component.init();
     }
 
     if (page) {
