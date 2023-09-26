@@ -1,12 +1,19 @@
 import { Component, createComponent } from '../../core/index.js';
-import { OptionSelector, QuantityInput, SelectedOption } from './index.js';
+import {
+  MessageModal,
+  OptionSelector,
+  QuantityInput,
+  SelectedOption,
+} from './index.js';
+import { OrderButton, CartButton, ProductLikeButton } from '../Button/index.js';
 
 class OrderForm extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      quantity: 1,
+      quantity: this.props.product.option.length > 0 ? 0 : 1,
       selectedProductOptions: [],
+      cartModal: false,
     };
   }
 
@@ -22,33 +29,95 @@ class OrderForm extends Component {
       quantity: 1,
     };
     const newSelectedProductOptions = this.state.selectedProductOptions;
+    const selectedProductOptions = [
+      ...newSelectedProductOptions,
+      newSelectedProductOption,
+    ];
+
+    const newTotalQuantity = this.getTotalQuantity(selectedProductOptions);
     this.setState({
       ...this.state,
-      selectedProductOptions: [
-        ...newSelectedProductOptions,
-        newSelectedProductOption,
-      ],
+      quantity: newTotalQuantity,
+      selectedProductOptions,
     });
   }
 
-  increaseQuantity() {
-    const newQuantity = this.state.quantity + 1;
-    if (newQuantity > this.props.product.stockCount) return;
-    this.setState({ ...this.state, quantity: newQuantity });
+  removeSelectedProductOption(optionId) {
+    const newSelectedProductOptions = this.state.selectedProductOptions.filter(
+      selectedProductOption => selectedProductOption.optionId !== optionId
+    );
+    const newTotalQuantity = this.getTotalQuantity(newSelectedProductOptions);
+    this.setState({
+      ...this.state,
+      quantity: newTotalQuantity,
+      selectedProductOptions: newSelectedProductOptions,
+    });
   }
 
-  decreaseQuantity() {
-    const newQuantity = this.state.quantity - 1;
-    if (newQuantity < 1) return;
-    this.setState({ ...this.state, quantity: newQuantity });
+  getTotalQuantity(newSelectedProductOptions) {
+    return newSelectedProductOptions.length <= 0
+      ? 1
+      : newSelectedProductOptions.reduce(
+          (acc, selectedProductOption) => acc + selectedProductOption.quantity,
+          0
+        );
   }
 
-  onChangeQuantityInput(e) {
+  setOptionsQuantity(optionId, newQuantity) {
     const maxQuantity = this.props.product.stockCount;
-    const newQuantity = +e.target.value;
+    const minQuantity = 1;
+    const quantity =
+      newQuantity > maxQuantity
+        ? maxQuantity
+        : newQuantity < minQuantity
+        ? minQuantity
+        : newQuantity;
+    const newSelectedProductOptions = this.state.selectedProductOptions.map(
+      selectedOption => {
+        if (optionId === selectedOption.optionId) {
+          return { ...selectedOption, quantity };
+        }
+        return selectedOption;
+      }
+    );
+    const newTotalQuantity = this.getTotalQuantity(newSelectedProductOptions);
+    this.setState({
+      ...this.state,
+      quantity: newTotalQuantity,
+      selectedProductOptions: newSelectedProductOptions,
+    });
+  }
+
+  setTotalQuantity(newQuantity) {
+    const maxQuantity = this.props.product.stockCount;
+    const minQuantity = 1;
     if (newQuantity > maxQuantity) this.setState({ quantity: maxQuantity });
-    else if (newQuantity < 1) this.setState({ quantity: 1 });
+    else if (newQuantity < minQuantity) this.setState({ quantity: 1 });
     else this.setState({ ...this.state, quantity: newQuantity });
+  }
+
+  getTotalPrice() {
+    const product = this.props.product;
+    const totalPrice =
+      product.price * 0.01 * (100 - product.discountRate) * this.state.quantity;
+
+    const totalAdditionalFee = this.state.selectedProductOptions.reduce(
+      (acc, selectedProductOption) => {
+        const optionIdx = product.option.findIndex(
+          option => option.id === selectedProductOption.optionId
+        );
+        acc +=
+          selectedProductOption.quantity *
+          product.option[optionIdx].additionalFee;
+        return acc;
+      },
+      0
+    );
+    return totalPrice + totalAdditionalFee;
+  }
+
+  toggleCartModal() {
+    this.setState({ ...this.state, cartModal: !this.state.cartModal });
   }
 
   render() {
@@ -85,18 +154,24 @@ class OrderForm extends Component {
         const optionPrice = productPrice + selectedOption.additionalFee;
         const quantityInput = createComponent(QuantityInput, {
           ...this.props,
-          quantity: this.state.quantity,
-          increaseQuantity: this.increaseQuantity.bind(this),
-          decreaseQuantity: this.decreaseQuantity.bind(this),
-          onChangeQuantityInput: this.onChangeQuantityInput.bind(this),
+          quantity: selectedProductOption.quantity,
+          setQuantity: this.setOptionsQuantity.bind(
+            this,
+            selectedProductOption.optionId
+          ),
         });
         const selectedProductOptionItem = createComponent(SelectedOption, {
           optionName,
           optionPrice,
           quantityInput,
+          removeSelectedProductOption: this.removeSelectedProductOption.bind(
+            this,
+            selectedProductOption.optionId
+          ),
         });
         selectedProductOptionList.append(selectedProductOptionItem);
       });
+
       selectedProductContainer.append(
         optionSelector,
         selectedProductOptionList
@@ -105,9 +180,7 @@ class OrderForm extends Component {
       const quantityInput = createComponent(QuantityInput, {
         ...this.props,
         quantity: this.state.quantity,
-        increaseQuantity: this.increaseQuantity.bind(this),
-        decreaseQuantity: this.decreaseQuantity.bind(this),
-        onChangeQuantityInput: this.onChangeQuantityInput.bind(this),
+        setQuantity: this.setTotalQuantity.bind(this),
       });
       selectedProductContainer.append(quantityInput);
     }
@@ -132,9 +205,8 @@ class OrderForm extends Component {
 
     const totalPrice = document.createElement('strong');
     totalPrice.setAttribute('class', 'price l-price');
-    totalPrice.innerText = (
-      this.props.product.price * this.state.quantity
-    ).toLocaleString('ko-Kr');
+    const totalProductPrice = this.getTotalPrice();
+    totalPrice.innerText = totalProductPrice.toLocaleString('ko-Kr');
 
     const priceType = document.createElement('span');
     priceType.innerText = '원';
@@ -143,8 +215,49 @@ class OrderForm extends Component {
     totalOrderInfo.append(productQuantity, totalPrice);
     totalPriceContainer.append(totalPriceTitle, totalOrderInfo);
 
+    const buttonContainer = document.createElement('div');
+    buttonContainer.setAttribute('class', 'button-group');
+    const orderButtonProps =
+      this.props.product.stockCount < 1
+        ? { text: '품절된 상품입니다.', disabled: true }
+        : {
+            text: '바로 구매',
+            disabled: false,
+          };
+    const orderButton = createComponent(OrderButton, orderButtonProps);
+    const cartButton = createComponent(CartButton, orderButtonProps);
+    const productLikeButton = createComponent(ProductLikeButton, {
+      productId: this.props.product.id,
+    });
+    buttonContainer.append(orderButton, cartButton, productLikeButton);
+    cartButton.addEventListener('click', this.toggleCartModal.bind(this));
+    if (this.state.cartModal) {
+      const modalMessage = document.createElement('p');
+      modalMessage.innerText = '장바구니에 추가되었습니다.';
+      const cartLink = document.createElement('a');
+      cartLink.setAttribute('class', 'cart-link');
+      cartLink.href = '/cart';
+      cartLink.innerText = '장바구니 가기';
+      const closeModal = document.createElement('button');
+      closeModal.type = 'button';
+      closeModal.setAttribute('class', 'close-modal-btn');
+      closeModal.innerText = '계속 쇼핑하기';
+      closeModal.addEventListener('click', this.toggleCartModal.bind(this));
+      const messageModal = createComponent(MessageModal, {
+        childrenEl: [modalMessage, cartLink, closeModal],
+      });
+      buttonContainer.append(messageModal);
+    }
     productOptionContainer.append(deliveryTitle, selectedProductContainer);
-    orderForm.append(productOptionContainer, totalPriceContainer);
+    if (this.props.product.stockCount < 1) {
+      orderForm.append(buttonContainer);
+    } else {
+      orderForm.append(
+        productOptionContainer,
+        totalPriceContainer,
+        buttonContainer
+      );
+    }
     return orderForm;
   }
 }

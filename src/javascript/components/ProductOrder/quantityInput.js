@@ -4,6 +4,22 @@ class QuantityInput extends Component {
   constructor(props) {
     super(props);
   }
+
+  increaseQuantity() {
+    const newQuantity = this.props.quantity + 1;
+    this.props.setQuantity(newQuantity);
+  }
+
+  decreaseQuantity() {
+    const newQuantity = this.props.quantity - 1;
+    this.props.setQuantity(newQuantity);
+  }
+
+  onChangeQuantityInput(e) {
+    const newQuantity = +e.target.value;
+    this.props.setQuantity(newQuantity);
+  }
+
   render() {
     const quantityOption = document.createElement('div');
     quantityOption.setAttribute('class', 'quantity-option');
@@ -13,7 +29,7 @@ class QuantityInput extends Component {
     quantityIncreaseButton.setAttribute('class', 'quantity-plus');
     quantityIncreaseButton.addEventListener(
       'click',
-      this.props.increaseQuantity
+      this.increaseQuantity.bind(this)
     );
 
     const increaseButtonIr = document.createElement('span');
@@ -26,7 +42,10 @@ class QuantityInput extends Component {
     quantityInput.setAttribute('class', 'quantity-input');
     quantityInput.setAttribute('id', `quantityInput${this.props.product.id}`);
     quantityInput.value = this.props.quantity;
-    quantityInput.addEventListener('change', this.props.onChangeQuantityInput);
+    quantityInput.addEventListener(
+      'change',
+      this.onChangeQuantityInput.bind(this)
+    );
 
     const quantityLabel = document.createElement('label');
     quantityLabel.setAttribute('class', 'ir');
@@ -38,7 +57,7 @@ class QuantityInput extends Component {
     quantityDecreaseButton.setAttribute('class', 'quantity-minus');
     quantityDecreaseButton.addEventListener(
       'click',
-      this.props.decreaseQuantity
+      this.decreaseQuantity.bind(this)
     );
 
     const decreaseButtonIr = document.createElement('span');
