@@ -91,8 +91,10 @@ class OrderForm extends Component {
   setTotalQuantity(newQuantity) {
     const maxQuantity = this.props.product.stockCount;
     const minQuantity = 1;
-    if (newQuantity > maxQuantity) this.setState({ quantity: maxQuantity });
-    else if (newQuantity < minQuantity) this.setState({ quantity: 1 });
+    if (newQuantity > maxQuantity)
+      this.setState({ ...this.state, quantity: maxQuantity });
+    else if (newQuantity < minQuantity)
+      this.setState({ ...this.state, quantity: 1 });
     else this.setState({ ...this.state, quantity: newQuantity });
   }
 
@@ -114,6 +116,68 @@ class OrderForm extends Component {
       0
     );
     return totalPrice + totalAdditionalFee;
+  }
+
+  getProductFromCart() {
+    const cartItem = JSON.parse(localStorage.getItem('cart'));
+    const productId = this.props.product.id;
+    if (!cartItem || !cartItem[productId]) {
+      const defaultProduct = {
+        id: productId,
+        detail: this.props.product,
+        option: [],
+        totalPrice: 0,
+        quantity: 0,
+      };
+      return defaultProduct;
+    }
+    return cartItem[productId];
+  }
+
+  addProductCart() {
+    if (this.state.quantity < 1) return;
+    const addedProduct = this.getProductFromCart();
+    this.state.selectedProductOptions.forEach(option => {
+      const targetIndex = addedProduct.option.findIndex(
+        addedOption => addedOption.optionId === option.optionId
+      );
+      if (targetIndex === -1) {
+        addedProduct.option.push(option);
+      } else {
+        addedProduct.option[targetIndex].quantity += option.quantity;
+      }
+    });
+    addedProduct.quantity += this.state.quantity;
+    addedProduct.totalPrice += this.getTotalPrice();
+    const cartItem = JSON.parse(localStorage.getItem('cart'));
+    const setCartItem = { ...cartItem, [addedProduct.id]: addedProduct };
+    localStorage.setItem('cart', JSON.stringify(setCartItem));
+  }
+
+  orderProduct() {
+    const productId = this.props.product.id;
+    const addedProduct = {
+      id: productId,
+      detail: this.props.product,
+      option: [],
+      totalPrice: 0,
+      quantity: 0,
+    };
+    this.state.selectedProductOptions.forEach(option => {
+      const targetIndex = addedProduct.option.findIndex(
+        addedOption => addedOption.optionId === option.optionId
+      );
+      if (targetIndex === -1) {
+        addedProduct.option.push(option);
+      } else {
+        addedProduct.option[targetIndex].quantity += option.quantity;
+      }
+    });
+    addedProduct.quantity += this.state.quantity;
+    addedProduct.totalPrice += this.getTotalPrice();
+    const cartItem = JSON.parse(localStorage.getItem('cart'));
+    const setCartItem = { [addedProduct.id]: addedProduct };
+    localStorage.setItem('cart', JSON.stringify(setCartItem));
   }
 
   toggleCartModal() {
@@ -230,7 +294,16 @@ class OrderForm extends Component {
       productId: this.props.product.id,
     });
     buttonContainer.append(orderButton, cartButton, productLikeButton);
-    cartButton.addEventListener('click', this.toggleCartModal.bind(this));
+    if (this.props.product.stockCount > 0 && this.state.quantity > 0) {
+      cartButton.addEventListener('click', this.toggleCartModal.bind(this));
+      orderButton.addEventListener('click', () => {
+        this.orderProduct();
+        window.routing('/cart');
+      });
+      if (!this.state.cartModal)
+        cartButton.addEventListener('click', this.addProductCart.bind(this));
+    }
+
     if (this.state.cartModal) {
       const modalMessage = document.createElement('p');
       modalMessage.innerText = '장바구니에 추가되었습니다.';
