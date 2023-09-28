@@ -1,5 +1,6 @@
+import { LinkToCart } from '../components/Button/index.js';
 import { ProductCard } from '../components/ProductCard/index.js';
-import { Component } from '../core/index.js';
+import { Component, createComponent } from '../core/index.js';
 
 class ProductPage extends Component {
   constructor() {
@@ -25,7 +26,7 @@ class ProductPage extends Component {
     productPageHeader.setAttribute('class', 'ir');
     productPageHeader.innerText = '상품 목록 페이지';
 
-    this.mainElement.appendChild(productPageHeader);
+    this.mainElement.append(productPageHeader);
 
     const productList = document.createElement('ul');
     productList.setAttribute('class', 'product-list');
@@ -41,7 +42,8 @@ class ProductPage extends Component {
       productList.append(productItem);
     });
 
-    this.mainElement.appendChild(productList);
+    const linkToCart = createComponent(LinkToCart, {});
+    this.mainElement.append(productList, linkToCart);
     return this.mainElement;
   }
 }

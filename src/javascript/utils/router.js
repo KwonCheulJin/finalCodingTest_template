@@ -37,7 +37,7 @@ class Router {
         this.routePush(e.target.closest('a').href);
       }
     });
-
+    window.routing = path => this.routePush(path);
     window.onpopstate = () => this.routing(window.location.pathname);
   }
 

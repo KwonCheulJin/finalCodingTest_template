@@ -1,4 +1,4 @@
-import { ProductPage, ProductDetail } from './pages/index.js';
+import { ProductPage, ProductDetail, CartPage } from './pages/index.js';
 import { Router } from './utils/index.js';
 
 export default class App {
@@ -14,6 +14,7 @@ export default class App {
       '/': ProductPage,
       // '/detail': ProductDetail,
       '/detail/:id': ProductDetail,
+      '/cart': CartPage,
     });
 
     router.init(rootElement);

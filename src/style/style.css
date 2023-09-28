@@ -1,4 +1,4 @@
-@charset 'utf-8';
+@charset "utf-8";
 @import 'reset.css';
 
 :root {
@@ -602,7 +602,7 @@ margin-bottom 값을 다르게 합니다. (form에 이미 padding 10px이 설정
 /* 기본 정보 - 버튼 스타일 */
 .product-basic-info .button-group {
   /* 장바구니 추가 완료시 나타날 메시지 박스 배치를 위해 position 추가
-  (이 부분은 메시지 박스 작업할 때 추가해도 됩니다.)*/
+    (이 부분은 메시지 박스 작업할 때 추가해도 됩니다.)*/
   position: relative;
   display: flex;
 }
